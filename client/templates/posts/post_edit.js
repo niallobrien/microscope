@@ -16,6 +16,8 @@ Template.postEdit.events({
       if (result.postExists)
         return alert('This link has already been posted');
 
+      Posts.update(currentPostId, {$set: {url: postProperties.url}});
+
       Router.go('postsList');
     });
   },
