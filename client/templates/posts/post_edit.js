@@ -1,3 +1,15 @@
+Template.postEdit.created = function() {
+  Session.set('postEditErrors', {});
+}
+Template.postEdit.helpers({
+  errorMessage: function(field) {
+    return Session.get('postEditErrors')[field];
+  },
+  errorClass: function (field) {
+    return !!Session.get('postEditErrors')[field] ? 'has-error' : '';
+  }
+});
+
 Template.postEdit.events({
   'submit form': function(e) {
     e.preventDefault();
@@ -9,20 +21,21 @@ Template.postEdit.events({
       title: $(e.target).find('[name=title]').val()
     }
 
-    Meteor.call('postEdit', currentPostId, postProperties, function (error, result) {
-      if (error)
-        return alert(error.reason);
+    var errors = validatePost(postProperties);
+    if (errors.title || errors.url)
+      return Session.set('postEditErrors', errors);
 
-      if (result.postExists)
-        return alert('This link has already been posted');
-
-      Posts.update(currentPostId, {$set: {url: postProperties.url}});
-
-      Router.go('postsList');
+    Posts.update(currentPostId, {$set: postProperties}, function(error) {
+      if (error) {
+        // display the error to the user
+        throwError(error.reason);
+      } else {
+        Router.go('postPage', {_id: currentPostId});
+      }
     });
   },
 
-'click .delete': function(e) {
+  'click .delete': function(e) {
     e.preventDefault();
 
     if (confirm("Delete this post?")) {
